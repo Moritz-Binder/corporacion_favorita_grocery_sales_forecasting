@@ -1,0 +1,188 @@
+,date,locale,locale_name,description
+14,2012-08-10,National,Ecuador,Primer Grito de Independencia
+19,2012-10-09,National,Ecuador,Independencia de Guayaquil
+20,2012-10-12,National,Ecuador,Traslado Independencia de Guayaquil
+21,2012-11-02,National,Ecuador,Dia de Difuntos
+22,2012-11-03,National,Ecuador,Independencia de Cuenca
+28,2012-12-05,Local,Quito,Fundacion de Quito-1
+29,2012-12-06,Local,Quito,Fundacion de Quito
+31,2012-12-21,National,Ecuador,Navidad-4
+33,2012-12-22,National,Ecuador,Navidad-3
+34,2012-12-23,National,Ecuador,Navidad-2
+35,2012-12-24,National,Ecuador,Puente Navidad
+36,2012-12-24,National,Ecuador,Navidad-1
+37,2012-12-25,National,Ecuador,Navidad
+38,2012-12-26,National,Ecuador,Navidad+1
+39,2012-12-31,National,Ecuador,Puente Primer dia del ano
+40,2012-12-31,National,Ecuador,Primer dia del ano-1
+41,2013-01-01,National,Ecuador,Primer dia del ano
+42,2013-01-05,National,Ecuador,Recupero puente Navidad
+43,2013-01-12,National,Ecuador,Recupero puente primer dia del ano
+44,2013-02-11,National,Ecuador,Carnaval
+45,2013-02-12,National,Ecuador,Carnaval
+51,2013-04-29,National,Ecuador,Viernes Santo
+52,2013-05-01,National,Ecuador,Dia del Trabajo
+53,2013-05-11,National,Ecuador,Dia de la Madre-1
+55,2013-05-12,National,Ecuador,Dia de la Madre
+56,2013-05-24,National,Ecuador,Batalla de Pichincha
+67,2013-08-10,National,Ecuador,Primer Grito de Independencia
+72,2013-10-09,National,Ecuador,Independencia de Guayaquil
+73,2013-10-11,National,Ecuador,Traslado Independencia de Guayaquil
+74,2013-11-02,National,Ecuador,Dia de Difuntos
+75,2013-11-03,National,Ecuador,Independencia de Cuenca
+81,2013-12-05,Local,Quito,Fundacion de Quito-1
+82,2013-12-06,Local,Quito,Fundacion de Quito
+84,2013-12-21,National,Ecuador,Navidad-4
+85,2013-12-22,National,Ecuador,Navidad-3
+87,2013-12-23,National,Ecuador,Navidad-2
+88,2013-12-24,National,Ecuador,Navidad-1
+89,2013-12-25,National,Ecuador,Navidad
+90,2013-12-26,National,Ecuador,Navidad+1
+91,2013-12-31,National,Ecuador,Primer dia del ano-1
+92,2014-01-01,National,Ecuador,Primer dia del ano
+94,2014-03-03,National,Ecuador,Carnaval
+95,2014-03-04,National,Ecuador,Carnaval
+99,2014-04-18,National,Ecuador,Viernes Santo
+101,2014-05-01,National,Ecuador,Dia del Trabajo
+102,2014-05-10,National,Ecuador,Dia de la Madre-1
+103,2014-05-11,National,Ecuador,Dia de la Madre
+105,2014-05-24,National,Ecuador,Batalla de Pichincha
+106,2014-06-12,National,Ecuador,Inauguracion Mundial de futbol Brasil
+107,2014-06-15,National,Ecuador,Mundial de futbol Brasil: Ecuador-Suiza
+108,2014-06-20,National,Ecuador,Mundial de futbol Brasil: Ecuador-Honduras
+113,2014-06-25,National,Ecuador,Mundial de futbol Brasil: Ecuador-Francia
+114,2014-06-28,National,Ecuador,Mundial de futbol Brasil: Octavos de Final
+115,2014-06-29,National,Ecuador,Mundial de futbol Brasil: Octavos de Final
+116,2014-06-30,National,Ecuador,Mundial de futbol Brasil: Octavos de Final
+117,2014-07-01,National,Ecuador,Mundial de futbol Brasil: Octavos de Final
+120,2014-07-04,National,Ecuador,Mundial de futbol Brasil: Cuartos de Final
+121,2014-07-05,National,Ecuador,Mundial de futbol Brasil: Cuartos de Final
+122,2014-07-08,National,Ecuador,Mundial de futbol Brasil: Semifinales
+123,2014-07-09,National,Ecuador,Mundial de futbol Brasil: Semifinales
+124,2014-07-12,National,Ecuador,Mundial de futbol Brasil: Tercer y cuarto lugar
+125,2014-07-13,National,Ecuador,Mundial de futbol Brasil: Final
+130,2014-08-10,National,Ecuador,Primer Grito de Independencia
+135,2014-10-09,National,Ecuador,Independencia de Guayaquil
+136,2014-10-10,National,Ecuador,Traslado Independencia de Guayaquil
+137,2014-11-02,National,Ecuador,Dia de Difuntos
+138,2014-11-03,National,Ecuador,Independencia de Cuenca
+144,2014-11-28,National,Ecuador,Black Friday
+145,2014-12-01,National,Ecuador,Cyber Monday
+146,2014-12-05,Local,Quito,Fundacion de Quito-1
+147,2014-12-06,Local,Quito,Fundacion de Quito
+149,2014-12-20,National,Ecuador,Recupero Puente Navidad
+150,2014-12-21,National,Ecuador,Navidad-4
+152,2014-12-22,National,Ecuador,Navidad-3
+153,2014-12-23,National,Ecuador,Navidad-2
+154,2014-12-24,National,Ecuador,Navidad-1
+155,2014-12-25,National,Ecuador,Navidad
+156,2014-12-26,National,Ecuador,Puente Navidad
+157,2014-12-26,National,Ecuador,Navidad+1
+158,2014-12-31,National,Ecuador,Primer dia del ano-1
+159,2015-01-01,National,Ecuador,Primer dia del ano
+160,2015-01-02,National,Ecuador,Puente Primer dia del ano
+161,2015-01-10,National,Ecuador,Recupero Puente Primer dia del ano
+162,2015-02-16,National,Ecuador,Carnaval
+163,2015-02-17,National,Ecuador,Carnaval
+166,2015-04-03,National,Ecuador,Viernes Santo
+170,2015-05-01,National,Ecuador,Dia del Trabajo
+171,2015-05-09,National,Ecuador,Dia de la Madre-1
+172,2015-05-10,National,Ecuador,Dia de la Madre
+174,2015-05-24,National,Ecuador,Batalla de Pichincha
+185,2015-08-10,National,Ecuador,Primer Grito de Independencia
+190,2015-10-09,National,Ecuador,Independencia de Guayaquil
+191,2015-11-02,National,Ecuador,Dia de Difuntos
+192,2015-11-03,National,Ecuador,Independencia de Cuenca
+198,2015-11-27,National,Ecuador,Black Friday
+199,2015-11-30,National,Ecuador,Cyber Monday
+200,2015-12-05,Local,Quito,Fundacion de Quito-1
+201,2015-12-06,Local,Quito,Fundacion de Quito
+203,2015-12-21,National,Ecuador,Navidad-4
+204,2015-12-22,National,Ecuador,Navidad-3
+206,2015-12-23,National,Ecuador,Navidad-2
+207,2015-12-24,National,Ecuador,Navidad-1
+208,2015-12-25,National,Ecuador,Navidad
+209,2015-12-26,National,Ecuador,Navidad+1
+210,2015-12-31,National,Ecuador,Primer dia del ano-1
+211,2016-01-01,National,Ecuador,Primer dia del ano
+212,2016-02-08,National,Ecuador,Carnaval
+213,2016-02-09,National,Ecuador,Carnaval
+215,2016-03-25,National,Ecuador,Viernes Santo
+219,2016-04-16,National,Ecuador,Terremoto Manabi
+220,2016-04-17,National,Ecuador,Terremoto Manabi+1
+221,2016-04-18,National,Ecuador,Terremoto Manabi+2
+222,2016-04-19,National,Ecuador,Terremoto Manabi+3
+223,2016-04-20,National,Ecuador,Terremoto Manabi+4
+225,2016-04-21,National,Ecuador,Terremoto Manabi+5
+226,2016-04-22,National,Ecuador,Terremoto Manabi+6
+227,2016-04-23,National,Ecuador,Terremoto Manabi+7
+228,2016-04-24,National,Ecuador,Terremoto Manabi+8
+229,2016-04-25,National,Ecuador,Terremoto Manabi+9
+230,2016-04-26,National,Ecuador,Terremoto Manabi+10
+231,2016-04-27,National,Ecuador,Terremoto Manabi+11
+232,2016-04-28,National,Ecuador,Terremoto Manabi+12
+233,2016-04-29,National,Ecuador,Terremoto Manabi+13
+234,2016-04-30,National,Ecuador,Terremoto Manabi+14
+235,2016-05-01,National,Ecuador,Dia del Trabajo
+236,2016-05-01,National,Ecuador,Terremoto Manabi+15
+237,2016-05-02,National,Ecuador,Terremoto Manabi+16
+238,2016-05-03,National,Ecuador,Terremoto Manabi+17
+239,2016-05-04,National,Ecuador,Terremoto Manabi+18
+240,2016-05-05,National,Ecuador,Terremoto Manabi+19
+241,2016-05-06,National,Ecuador,Terremoto Manabi+20
+242,2016-05-07,National,Ecuador,Dia de la Madre-1
+243,2016-05-07,National,Ecuador,Terremoto Manabi+21
+244,2016-05-08,National,Ecuador,Terremoto Manabi+22
+245,2016-05-08,National,Ecuador,Dia de la Madre
+246,2016-05-09,National,Ecuador,Terremoto Manabi+23
+247,2016-05-10,National,Ecuador,Terremoto Manabi+24
+248,2016-05-11,National,Ecuador,Terremoto Manabi+25
+250,2016-05-12,National,Ecuador,Terremoto Manabi+26
+251,2016-05-13,National,Ecuador,Terremoto Manabi+27
+252,2016-05-14,National,Ecuador,Terremoto Manabi+28
+253,2016-05-15,National,Ecuador,Terremoto Manabi+29
+254,2016-05-16,National,Ecuador,Terremoto Manabi+30
+255,2016-05-24,National,Ecuador,Batalla de Pichincha
+256,2016-05-27,National,Ecuador,Traslado Batalla de Pichincha
+268,2016-08-10,National,Ecuador,Primer Grito de Independencia
+269,2016-08-12,National,Ecuador,Traslado Primer Grito de Independencia
+274,2016-10-09,National,Ecuador,Independencia de Guayaquil
+275,2016-11-02,National,Ecuador,Dia de Difuntos
+276,2016-11-03,National,Ecuador,Independencia de Cuenca
+277,2016-11-04,National,Ecuador,Puente Dia de Difuntos
+283,2016-11-12,National,Ecuador,Recupero Puente Dia de Difuntos
+284,2016-11-25,National,Ecuador,Black Friday
+285,2016-11-28,National,Ecuador,Cyber Monday
+286,2016-12-05,Local,Quito,Fundacion de Quito-1
+287,2016-12-06,Local,Quito,Fundacion de Quito
+289,2016-12-21,National,Ecuador,Navidad-4
+290,2016-12-22,National,Ecuador,Navidad-3
+292,2016-12-23,National,Ecuador,Navidad-2
+293,2016-12-24,National,Ecuador,Navidad-1
+294,2016-12-25,National,Ecuador,Navidad
+295,2016-12-26,National,Ecuador,Navidad+1
+296,2016-12-31,National,Ecuador,Primer dia del ano-1
+297,2017-01-01,National,Ecuador,Primer dia del ano
+298,2017-01-02,National,Ecuador,Traslado Primer dia del ano
+299,2017-02-27,National,Ecuador,Carnaval
+300,2017-02-28,National,Ecuador,Carnaval
+306,2017-04-14,National,Ecuador,Viernes Santo
+308,2017-05-01,National,Ecuador,Dia del Trabajo
+310,2017-05-13,National,Ecuador,Dia de la Madre-1
+311,2017-05-14,National,Ecuador,Dia de la Madre
+312,2017-05-24,National,Ecuador,Batalla de Pichincha
+313,2017-05-26,National,Ecuador,Traslado Batalla de Pichincha
+324,2017-08-10,National,Ecuador,Primer Grito de Independencia
+325,2017-08-11,National,Ecuador,Traslado Primer Grito de Independencia
+331,2017-10-09,National,Ecuador,Independencia de Guayaquil
+332,2017-11-02,National,Ecuador,Dia de Difuntos
+333,2017-11-03,National,Ecuador,Independencia de Cuenca
+339,2017-12-05,Local,Quito,Fundacion de Quito-1
+340,2017-12-06,Local,Quito,Fundacion de Quito
+342,2017-12-08,Local,Quito,Traslado Fundacion de Quito
+343,2017-12-21,National,Ecuador,Navidad-4
+345,2017-12-22,National,Ecuador,Navidad-3
+346,2017-12-23,National,Ecuador,Navidad-2
+347,2017-12-24,National,Ecuador,Navidad-1
+348,2017-12-25,National,Ecuador,Navidad
+349,2017-12-26,National,Ecuador,Navidad+1
