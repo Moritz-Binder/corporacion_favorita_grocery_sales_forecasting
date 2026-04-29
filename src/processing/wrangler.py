@@ -15,7 +15,7 @@ class TimeSeriesWrangler:
         The method to fill missing values after resampling. Options include:
         'zero' (fill with zeros), 'ffill' (forward fill), 'bfill' (backward fill).
     """
-    def __init__(self, date_col: str, fill_col: str, freq: str = 'D', fill_method: str = 'zero'):
+    def __init__(self, date_col: str, fill_col: str, freq: str = 'D', fill_method: str = 'zeros'):
         self.date_col = date_col
         self.freq = freq
         self.fill_col = fill_col
@@ -37,11 +37,11 @@ class TimeSeriesWrangler:
         
         resampler = df.resample(self.freq)
         
-        if self.fill_strategy == 'zeros':
-            df = resampler[self.fill_col].asfreq().fillna(0)
-        elif self.fill_strategy == 'ffill':
+        if self.fill_method == 'zeros':
+            df = resampler[self.fill_col].fillna(0)
+        elif self.fill_method == 'ffill':
             df = resampler[self.fill_col].ffill().fillna(0)
-        elif self.fill_strategy == 'bfill':
+        elif self.fill_method == 'bfill':
             df = resampler[self.fill_col].bfill().fillna(0)
         else:
             raise ValueError(f"Unsupported fill method: {self.fill_method}")
