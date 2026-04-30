@@ -34,17 +34,19 @@ class TimeSeriesWrangler:
         
         # 2. Fill Gaps (Resampling)
         df = df.set_index(self.date_col)
+        dates_ts = pd.date_range(start=df.index.min(), end=df.index.max(), freq='D')
         
-        resampler = df.resample(self.freq)
+        resampler = df.reindex(dates_ts)
         
         if self.fill_method == 'zeros':
-            df = resampler[self.fill_col].fillna(0)
+            df_clean = resampler[self.fill_col].fillna(0)
         elif self.fill_method == 'ffill':
-            df = resampler[self.fill_col].ffill().fillna(0)
+            df_clean = resampler[self.fill_col].ffill().fillna(0)
         elif self.fill_method == 'bfill':
-            df = resampler[self.fill_col].bfill().fillna(0)
+            df_clean = resampler[self.fill_col].bfill().fillna(0)
         else:
             raise ValueError(f"Unsupported fill method: {self.fill_method}")
         
         # 3. Reset index to keep it compatible with downstream tasks
-        return df.reset_index()
+        df_clean.index.name = 'date'
+        return df_clean.reset_index()

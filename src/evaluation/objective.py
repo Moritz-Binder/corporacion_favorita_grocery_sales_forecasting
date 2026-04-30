@@ -1,6 +1,7 @@
 import os
 import pickle
 import numpy as np
+import pandas as pd
 import mlflow
 from hyperopt import fmin, tpe, Trials, STATUS_OK
 from darts.metrics import mape, rmse
@@ -20,28 +21,31 @@ class DartsObjective:
         self.metric = metric
         self.exog = exog # This is the 'Master' exog series
         self.start_ratio = start_ratio
-        
-        # Expanded integer list to include seasonal components
-        self.int_params = [
-            'p', 'd', 'q', 'P', 'D', 'Q', 's', 
-            'n_changepoints', 'seasonal_periods', 'lags'
-        ]
 
     def __call__(self, params):
+        # Expanded integer list to include seasonal components
+        int_params = [
+            'p', 'd', 'q', 'P', 'D', 'Q', 's'
+        ]
         # 1. Feature Selection Logic
         # Extract the list of chosen features from the space
         # If 'selected_features' isn't in params, it defaults to all features
-        selected_features = params.pop('selected_features', None)
-        
-        # crub the Nones (The "Drop None" step)
-        selected_features = [f for f in selected_features if f is not None]
-        
-        # 2. Slice Exogenous Data
-        current_exog = None
-        if self.exog is not None and len(selected_features) > 0:
-            current_exog = self.exog[selected_features]
+        if self.exog is not None:
+            # 2. Check if this specific model actually tuned 'selected_features'
+            if 'selected_features' in params:
+                selected_features = [f for f in params['selected_features'] if f is not None]
+                params.pop('selected_features', None)
+
+                if not selected_features: # More Pythonic check for an empty list
+                    current_exog = None
+                else:
+                    current_exog = self.exog[selected_features]
+            else:
+                # Fallback: The model is given exog data, but didn't tune feature selection.
+                # We default to passing all available exogenous features.
+                current_exog = self.exog
         else:
-            pass # No exogenous features selected or provided, model will be trained without covariates
+            current_exog = None
         
         # 3. Parameter Cleaning & Tuple Reconstruction
         clean_params = {}
@@ -50,11 +54,10 @@ class DartsObjective:
             if k == 'seasonal_order' and isinstance(v, (list, tuple)):
                 clean_params[k] = tuple(int(x) if i < 3 else x for i, x in enumerate(v))
             # Standard integer casting
-            elif k in self.int_params:
+            elif k in int_params:
                 clean_params[k] = int(v)
             else:
                 clean_params[k] = v
-
         # 4. Instantiate Model
         model = self.model_class(**clean_params)
         
@@ -67,6 +70,9 @@ class DartsObjective:
                 kwargs['future_covariates'] = current_exog
             elif model.supports_past_covariates:
                 kwargs['past_covariates'] = current_exog
+        else:
+            # If no exogenous variables are selected, ensure we don't pass any covariates
+            kwargs = {}
 
         # 6. Backtesting
         try:
@@ -85,12 +91,19 @@ class DartsObjective:
             loss = 1e9 # High penalty for non-convergence
 
         # We return the selected features in the result so the Optimizer can log them
-        return {
-            'loss': loss, 
-            'status': STATUS_OK, 
-            'params': clean_params, 
-            'selected_features': selected_features
-        }
+        if self.exog is not None:
+            return {
+                'loss': loss, 
+                'status': STATUS_OK, 
+                'params': clean_params, 
+                'selected_features': selected_features
+            }
+        else:
+            return {
+                'loss': loss, 
+                'status': STATUS_OK, 
+                'params': clean_params
+            }
 
 
 # ---------------------------------------------------------
@@ -148,22 +161,61 @@ class TimeSeriesOptimizer:
         best_trial = trials.best_trial
         best_params = best_trial['result']['params']
         best_loss = best_trial['result']['loss']
+
+        # Expanded integer list to include seasonal components
+        int_params = [
+            'p', 'd', 'q', 'P', 'D', 'Q', 's'
+        ]
         
         with mlflow.start_run(run_name=f"Champion_{model_name}") as run:
             print(f"Logging Champion {model_name} to MLflow...")
-            
-            # Re-train the final model on the ENTIRE dataset for production deployment
-            final_model = model_class(**best_params)
-            
-            kwargs = {}
-            if exog is not None and final_model.supports_future_covariates:
-                kwargs['future_covariates'] = exog
-                
-            final_model.fit(series, **kwargs)
-            
+
             # Log metrics, params, and artifacts
             mlflow.log_params(best_params)
             mlflow.log_metric("cv_loss", best_loss)
+            
+            if exog is not None:
+                # 2. Check if this specific model actually tuned 'selected_features'
+                if 'selected_features' in best_params:
+                    selected_features = [f for f in best_params['selected_features'] if f is not None]
+                    best_params.pop('selected_features', None)
+
+                    if not selected_features: # More Pythonic check for an empty list
+                        current_exog = None
+                    else:
+                        current_exog = exog[selected_features]
+                else:
+                    # Fallback: The model is given exog data, but didn't tune feature selection.
+                    # We default to passing all available exogenous features.
+                    current_exog = exog
+            else:
+                current_exog = None
+
+            # 3. Parameter Cleaning & Tuple Reconstruction
+            clean_params = {}
+            for k, v in best_params.items():
+                # Handle the specific seasonal_order tuple for SARIMAX
+                if k == 'seasonal_order' and isinstance(v, (list, tuple)):
+                    clean_params[k] = tuple(int(x) if i < 3 else x for i, x in enumerate(v))
+                # Standard integer casting
+                elif k in int_params:
+                    clean_params[k] = int(v)
+                else:
+                    clean_params[k] = v
+            # Re-train the final model on the ENTIRE dataset for production deployment
+            final_model = model_class(**clean_params)
+            
+            kwargs = {}
+            if current_exog is not None:
+                if final_model.supports_future_covariates:
+                    kwargs['future_covariates'] = current_exog
+                elif final_model.supports_past_covariates:
+                    kwargs['past_covariates'] = current_exog
+            else:
+                # If no exogenous variables are selected, ensure we don't pass any covariates
+                kwargs = {}
+                
+            final_model.fit(series, **kwargs)
             
             # Attach the trials history as a file so you don't lose the R&D data
             mlflow.log_artifact(trials_path, artifact_path="hyperopt_history")

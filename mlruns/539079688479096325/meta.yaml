@@ -1,0 +1,8 @@
+artifact_location: file:///Users/moe/Developer/work-projects/MIST/TimeSeries_April2026/corporacion_favorita_grocery_sales_forecasting/ipynb/../mlruns/539079688479096325
+creation_time: 1777566148688
+experiment_id: '539079688479096325'
+last_update_time: 1777566148688
+lifecycle_stage: active
+name: SARIMAX_7
+trace_location: null
+workspace: default
