@@ -10,36 +10,64 @@ from darts.metrics import mape, rmse
 # ---------------------------------------------------------
 class DartsObjective:
     """
-    Evaluates a Darts time-series model using historical backtesting.
-    No MLflow logging happens here to keep the tracking server clean.
+    Universal Evaluator for Darts models with Feature Selection.
+    Supports ARIMA, Prophet, and ExponentialSmoothing.
     """
     def __init__(self, series, model_class, horizon, metric, exog=None, start_ratio=0.7):
         self.series = series
         self.model_class = model_class
         self.horizon = horizon
         self.metric = metric
-        self.exog = exog
+        self.exog = exog # This is the 'Master' exog series
         self.start_ratio = start_ratio
         
-        # Parameters that must strictly be integers for Darts models
-        self.int_params = ['p', 'd', 'q', 'P', 'D', 'Q', 'n_changepoints', 'seasonal_periods']
+        # Expanded integer list to include seasonal components
+        self.int_params = [
+            'p', 'd', 'q', 'P', 'D', 'Q', 's', 
+            'n_changepoints', 'seasonal_periods', 'lags'
+        ]
 
     def __call__(self, params):
-        # 1. Cast parameters correctly (Hyperopt often returns floats)
+        # 1. Feature Selection Logic
+        # Extract the list of chosen features from the space
+        # If 'selected_features' isn't in params, it defaults to all features
+        selected_features = params.pop('selected_features', None)
+        
+        # If the space provided a list with None/Feature toggles, clean it:
+        if isinstance(selected_features, list):
+            selected_features = [f for f in selected_features if f is not None]
+
+        # 2. Slice Exogenous Data
+        current_exog = None
+        if self.exog is not None and selected_features:
+            current_exog = self.exog[selected_features]
+
+        # 3. Parameter Cleaning & Tuple Reconstruction
         clean_params = {}
         for k, v in params.items():
-            clean_params[k] = int(v) if k in self.int_params else v
+            # Handle the specific seasonal_order tuple for SARIMAX
+            if k == 'seasonal_order' and isinstance(v, (list, tuple)):
+                clean_params[k] = tuple(int(x) if i < 3 else x for i, x in enumerate(v))
+            # Standard integer casting
+            elif k in self.int_params:
+                clean_params[k] = int(v)
+            else:
+                clean_params[k] = v
 
-        # 2. Instantiate Model
+        # 4. Instantiate Model
         model = self.model_class(**clean_params)
         
-        # 3. Handle models that take covariates vs those that don't
-        # Darts will throw an error if you pass future_covariates to ExponentialSmoothing
+        # 5. Determine Covariate Type
+        # Some models use 'future_covariates' (Prophet/ARIMA), 
+        # some use 'past_covariates', and some (ExpSmoothing) use none.
         kwargs = {}
-        if self.exog is not None and model.supports_future_covariates:
-            kwargs['future_covariates'] = self.exog
+        if current_exog is not None:
+            if model.supports_future_covariates:
+                kwargs['future_covariates'] = current_exog
+            elif model.supports_past_covariates:
+                kwargs['past_covariates'] = current_exog
 
-        # 4. Rigorous Backtesting (Prevents Data Leakage)
+        # 6. Backtesting
         try:
             forecasts = model.historical_forecasts(
                 self.series,
@@ -49,14 +77,19 @@ class DartsObjective:
                 last_points_only=True,
                 **kwargs
             )
-            # Calculate error
+            # Hyperopt minimizes this 'loss' value
             loss = self.metric(self.series, forecasts)
         except Exception as e:
-            # If the model fails to converge or errors out, penalize it heavily
-            print(f"Trial failed with params {clean_params}: {e}")
-            loss = np.inf
+            print(f"Trial failed for {self.model_class.__name__}: {e}")
+            loss = 1e9 # High penalty for non-convergence
 
-        return {'loss': loss, 'status': STATUS_OK, 'params': clean_params}
+        # We return the selected features in the result so the Optimizer can log them
+        return {
+            'loss': loss, 
+            'status': STATUS_OK, 
+            'params': clean_params, 
+            'selected_features': selected_features
+        }
 
 
 # ---------------------------------------------------------
@@ -66,7 +99,7 @@ class TimeSeriesOptimizer:
     """
     Manages batching, MLflow logging, and experiment state.
     """
-    def __init__(self, experiment_name: str, trials_dir: str = "./trials"):
+    def __init__(self, experiment_name: str, trials_dir: str = "../trials"):
         self.experiment_name = experiment_name
         self.trials_dir = trials_dir
         os.makedirs(self.trials_dir, exist_ok=True)

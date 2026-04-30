@@ -25,13 +25,15 @@ class DateFeatureTransformer(BaseEstimator, TransformerMixin):
                  features: list = ['year', 'month', 'day_of_week', 'is_weekend', 'is_holiday'],
                  payday_val: int = 15,
                  country: str = 'EC',
-                 subdiv: str = 'P'):
+                 subdiv: str = None,
+                 drop_date_col: bool = True):
         self.column_name = column_name
         self.features = features
         self.payday_val = payday_val
         self.country = country
         self.subdiv = subdiv
         self.holiday_lookup = None
+        self.drop_date_col = drop_date_col
 
     def fit(self, X, y=None):
         # We pre-calculate holidays during fit to ensure consistency 
@@ -71,4 +73,8 @@ class DateFeatureTransformer(BaseEstimator, TransformerMixin):
             else:
                 print(f"Warning: Feature '{feature}' not recognized.")
 
-        return X_out.drop(columns=[self.column_name])
+        if self.drop_date_col: 
+                X_out = X_out.drop(columns=[self.column_name])
+        else:
+                X_out = X_out
+        return X_out
