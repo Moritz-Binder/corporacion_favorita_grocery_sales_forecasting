@@ -33,15 +33,16 @@ class DartsObjective:
         # If 'selected_features' isn't in params, it defaults to all features
         selected_features = params.pop('selected_features', None)
         
-        # If the space provided a list with None/Feature toggles, clean it:
-        if isinstance(selected_features, list):
-            selected_features = [f for f in selected_features if f is not None]
-
+        # crub the Nones (The "Drop None" step)
+        selected_features = [f for f in selected_features if f is not None]
+        
         # 2. Slice Exogenous Data
         current_exog = None
-        if self.exog is not None and selected_features:
+        if self.exog is not None and len(selected_features) > 0:
             current_exog = self.exog[selected_features]
-
+        else:
+            pass # No exogenous features selected or provided, model will be trained without covariates
+        
         # 3. Parameter Cleaning & Tuple Reconstruction
         clean_params = {}
         for k, v in params.items():
