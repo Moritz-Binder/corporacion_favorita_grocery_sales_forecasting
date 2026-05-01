@@ -11,8 +11,8 @@ class LagFeatureTransformer(BaseEstimator, TransformerMixin):
         The numeric columns to create lags for.
     - lags: list of int
         The lag offsets (e.g., [1, 7, 30] for yesterday, last week, last month).
-    - drop_na: bool, default=False
-        Whether to drop the rows with NaN values created by lagging.
+    - fill_method: str, default='none'
+        Whether to fill NaN values created by lagging. Options: 'none' (keep NaN), 'zeros' (fill with 0), 'ffill' (forward fill), 'bfill' (backward fill).
     """
     def __init__(self, column_lag: dict, fill_method: str = 'none'):
         self.column_lag = column_lag
@@ -50,8 +50,8 @@ class WindowFeatureTransformer(BaseEstimator, TransformerMixin):
         The numeric columns to create lags for.
     - lags: list of int
         The lag offsets (e.g., [1, 7, 30] for yesterday, last week, last month).
-    - drop_na: bool, default=False
-        Whether to drop the rows with NaN values created by lagging.
+    - fill_method: str, default='none'
+        Whether to fill NaN values created by lagging. Options: 'none' (keep NaN), 'zeros' (fill with 0), 'ffill' (forward fill), 'bfill' (backward fill).
     """
     def __init__(self, column_lag: dict, fill_method: str = 'none'):
         self.column_lag = column_lag

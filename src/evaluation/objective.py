@@ -5,6 +5,7 @@ import pandas as pd
 import mlflow
 from hyperopt import fmin, tpe, Trials, STATUS_OK
 from darts.metrics import mape, rmse
+from sklearn.metrics import mean_absolute_error
 
 # ---------------------------------------------------------
 # 1. THE HYPEROPT OBJECTIVE
@@ -232,28 +233,242 @@ class TimeSeriesOptimizer:
                 mlflow.log_artifact(model_path, artifact_path="model")
                 os.remove(model_path)
 
-class MLObjective:
+# ---------------------------------------------------------
+# 3. Forecast Function
+# ---------------------------------------------------------
+def forecasting_pipeline(model, y_train, x_dates, num_days, test, test_dates, lag_list, rolling_list, selceted_featurs, target):
     """
-    Handles standard ML models (XGB, RF, LR) that require 
-    tabular data (X, y) rather than Darts TimeSeries.
+    Upgraded recursive forecast with dynamic lag and rolling window generation.
     """
-    def __init__(self, X, y, model_class, metric, cv_splitter):
-        self.X = X
-        self.y = y
+    import pandas as pd
+    import numpy as np
+
+    # Create history starting with the end of training data
+    history = y_train.copy().set_index(x_dates)
+    xogen = test.copy().set_index(test_dates)
+    last_date = history.index[-1]
+    future = []
+
+    for i in range(num_days):
+        next_date = last_date + pd.Timedelta(days=1)
+        feature_dict = {}
+
+        # --- Dynamic Lags ---
+        for lag in lag_list:
+            feature_dict[f'{target}_lag_{lag}'] = [history[target].iloc[-lag]]
+
+        # --- Dynamic Rolling Stats ---
+        for window in rolling_list:
+            feature_dict[f'{target}_rolling_{window}_mean'] = [history[target].iloc[-window:].mean()]
+            feature_dict[f'{target}_rolling_{window}_std'] = [history[target].iloc[-window:].std()]
+
+        # Create row DataFrame
+        row = pd.DataFrame(data=feature_dict, index=[next_date])
+        
+        # Merge with exogenous variables (holidays, prices, etc.)
+        xogen = xogen.loc[:, ~xogen.columns.str.contains('lag|rolling', case=False)]
+        rows = row.merge(xogen, how='left', left_index=True, right_index=True)
+        
+        # CRITICAL: Ensure column order matches exactly what the model was trained on
+        # This assumes the test dataframe columns are in the correct order
+        rows = rows[selceted_featurs]
+
+        if rows.isnull().any().any():
+            rows = rows.fillna(0)
+
+        # Predict and update history
+        y_hat = model.predict(rows)[0]
+        future.append(y_hat)
+        
+        history = pd.concat([history, pd.DataFrame(data={'unit_sales': y_hat}, index=[next_date])])
+        last_date = next_date
+
+    return future
+
+import os
+import pickle
+import numpy as np
+import pandas as pd
+import mlflow
+from hyperopt import fmin, tpe, Trials, STATUS_OK
+from sklearn.metrics import mean_squared_error
+
+# ---------------------------------------------------------
+# 4. Machine Learning Recursive Objective for Cross-Validation
+# ---------------------------------------------------------
+class MLRecursiveObjective:
+    def __init__(self, df, target_col, date_col, model_class, metric, 
+                 lag_list, rolling_list, start_ratio=0.7, step_size=7):
+        self.df = df.sort_values(date_col).reset_index(drop=True)
+        self.target_col = target_col
+        self.date_col = date_col
         self.model_class = model_class
         self.metric = metric
-        self.cv_splitter = cv_splitter
+        self.lag_list = lag_list
+        self.rolling_list = rolling_list
+        self.start_ratio = start_ratio
+        self.step_size = step_size
+        self.exog_cols = [c for c in df.columns if c not in [target_col, date_col]]
 
     def __call__(self, params):
-        # 1. Handle Feature Selection (similar to your Darts logic)
-        # 2. Instantiate Model
-        model = self.model_class(**params)
+        # 1. Parameter Clean-up (Hyperopt specific)
+        int_params = [
+            'n_estimators', 'max_depth', 'min_samples_split'
+        ]
+        # 1. Feature Selection Logic
+        # Extract the list of chosen features from the space
+            # 2. Check if this specific model actually tuned 'selected_features'
+        if 'selected_features' in params:
+            selected_features = [f for f in params['selected_features'] if f is not None]
+            total_clomns = [self.date_col, self.target_col] + selected_features
+            params.pop('selected_features', None)
+
+            if not selected_features: # More Pythonic check for an empty list
+                current_df = self.df[[self.target_col, self.date_col]]
+            else:
+                current_df = self.df[total_clomns]
+        else:
+            # Fallback: The model is given exog data, but didn't tune feature selection.
+            # We default to passing all available exogenous features.
+            current_df = self.df
         
-        # 3. Cross-Validation (Time Series Split)
-        scores = []
-        for train_idx, val_idx in self.cv_splitter.split(self.X):
-            model.fit(self.X.iloc[train_idx], self.y.iloc[train_idx])
-            preds = model.predict(self.X.iloc[val_idx])
-            scores.append(self.metric(self.y.iloc[val_idx], preds))
+        # 3. Parameter Cleaning & Tuple Reconstruction
+        clean_params = {}
+        for k, v in params.items():
+            # Standard integer casting
+            if k in int_params:
+                clean_params[k] = int(v)
+            else:
+                clean_params[k] = v
+
+        model = self.model_class(**clean_params)
         
-        return {'loss': np.mean(scores), 'status': STATUS_OK}
+        # 2. Rolling CV
+        total_len = len(current_df)
+        start_idx = int(total_len * self.start_ratio)
+        fold_losses = []
+        
+        for current_split in range(start_idx, total_len - self.step_size, self.step_size):
+            train_df = current_df.iloc[:current_split]
+            test_df = current_df.iloc[current_split : current_split + self.step_size]
+            
+            # Static Fit
+            X_train = train_df.drop(columns=[self.target_col, self.date_col])
+            y_train = train_df[self.target_col]
+            model.fit(X_train, y_train)
+            
+            # Recursive Predict using the dynamic lists
+            preds = forecasting_pipeline(
+                model=model,
+                y_train=train_df[[self.target_col]],
+                x_dates=train_df[self.date_col],
+                num_days=self.step_size,
+                test=test_df.drop(columns=[self.target_col]),
+                test_dates=test_df[self.date_col],
+                lag_list=self.lag_list,
+                rolling_list=self.rolling_list,
+                selceted_featurs=selected_features,
+                target=self.target_col
+            )
+            
+            fold_losses.append(self.metric(test_df[self.target_col], preds))
+
+        return {'loss': np.mean(fold_losses), 'status': STATUS_OK, 'params': params}
+
+# ---------------------------------------------------------
+# 5. Machine Learning Optimizer for Hyperparameter Tuning with MLflow Logging
+# ---------------------------------------------------------
+
+class MLOptimizer:
+    def __init__(self, experiment_name: str, trials_dir: str = "../trials"):
+        self.experiment_name = experiment_name
+        self.trials_dir = trials_dir
+        os.makedirs(self.trials_dir, exist_ok=True)
+        mlflow.set_experiment(self.experiment_name)
+
+    def optimize_ml_model(self, model_name, model_class, space, df, target_col, date_col,lag_list,rolling_list, metric, start_ratio=0.7, step_size=7, max_evals=30):
+        trials_path = os.path.join(self.trials_dir, f"{model_name}_trials.pkl")
+        
+        if os.path.exists(trials_path):
+            with open(trials_path, "rb") as f:
+                trials = pickle.load(f)
+        else:
+            trials = Trials()
+
+        if len(trials.trials) < max_evals:
+            objective = MLRecursiveObjective(
+                df=df, 
+                target_col=target_col, 
+                date_col=date_col, 
+                model_class=model_class, 
+                metric=metric,
+                lag_list=lag_list,
+                rolling_list=rolling_list,
+                start_ratio=start_ratio,
+                step_size=step_size
+            )
+            
+            fmin(fn=objective, space=space, algo=tpe.suggest, 
+                 max_evals=max_evals, trials=trials)
+            
+            with open(trials_path, "wb") as f:
+                pickle.dump(trials, f)
+
+        self._log_ml_champion(model_name, model_class, trials, df, target_col, date_col, trials_path)
+
+    def _log_ml_champion(self, model_name, model_class, trials, df, target_col, date_col, trials_path):
+        # Extract the best parameters and loss from the trials object
+        best_trial = trials.best_trial
+        best_params = best_trial['result']['params']
+        best_loss = best_trial['result']['loss']
+        int_params = [
+            'n_estimators', 'max_depth', 'min_samples_split'
+        ]
+        
+        with mlflow.start_run(run_name=f"Champion_{model_name}") as run:
+            print(f"Logging Champion {model_name} to MLflow...")
+
+            # Log metrics, params, and artifacts
+            mlflow.log_params(best_params)
+            mlflow.log_metric("cv_loss", best_loss)
+            
+            if 'selected_features' in best_params:
+                selected_features = [f for f in best_params['selected_features'] if f is not None]
+                total_clomns = selected_features + [self.target_col, self.date_col]
+                best_params.pop('selected_features', None)
+
+                if not selected_features: # More Pythonic check for an empty list
+                    current_df = df[[self.target_col, self.date_col]]
+                else:
+                    current_df = df[total_clomns]
+            else:
+                # Fallback: The model is given exog data, but didn't tune feature selection.
+                # We default to passing all available exogenous features.
+                current_df = df
+
+            # 3. Parameter Cleaning & Tuple Reconstruction
+            clean_params = {}
+            for k, v in best_params.items():
+                # Standard integer casting
+                if k in int_params:
+                    clean_params[k] = int(v)
+                else:
+                    clean_params[k] = v
+            
+            # Train final model on full dataset
+            X = current_df.drop(columns=[target_col, date_col])
+            y = current_df[target_col]
+            
+            final_model = model_class(**clean_params)
+            final_model.fit(X, y)
+            
+            # Save trials history
+            mlflow.log_artifact(trials_path)
+            
+            # Log Model based on library
+            if "XGB" in str(model_class):
+                mlflow.xgboost.log_model(final_model, "model")
+            else:
+                mlflow.sklearn.log_model(final_model, "model")
+            
+            print(f"Successfully logged {model_name} with min loss: {best_loss:.4f}")

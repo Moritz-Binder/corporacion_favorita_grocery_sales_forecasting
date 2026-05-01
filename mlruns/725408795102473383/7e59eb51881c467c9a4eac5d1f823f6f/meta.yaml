@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/moe/Developer/work-projects/MIST/TimeSeries_April2026/corporacion_favorita_grocery_sales_forecasting/ipynb/../mlruns/725408795102473383/7e59eb51881c467c9a4eac5d1f823f6f/artifacts
+end_time: 1777623032667
+entry_point_name: ''
+experiment_id: '725408795102473383'
+lifecycle_stage: active
+run_id: 7e59eb51881c467c9a4eac5d1f823f6f
+run_name: Champion_Triple Exponential Smoothing
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1777623032599
+status: 3
+tags: []
+user_id: moe

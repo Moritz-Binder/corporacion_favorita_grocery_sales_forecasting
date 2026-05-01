@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/moe/Developer/work-projects/MIST/TimeSeries_April2026/corporacion_favorita_grocery_sales_forecasting/ipynb/../mlruns/794350610558717035/9db7ac4742cc4989bdad1021bbdd6530/artifacts
+end_time: 1777625383392
+entry_point_name: ''
+experiment_id: '794350610558717035'
+lifecycle_stage: active
+run_id: 9db7ac4742cc4989bdad1021bbdd6530
+run_name: Champion_Prophet
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1777625383310
+status: 3
+tags: []
+user_id: moe

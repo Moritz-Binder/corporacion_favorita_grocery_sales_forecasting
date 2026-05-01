@@ -1,0 +1,22 @@
+artifact_path: file:///Users/moe/Developer/work-projects/MIST/TimeSeries_April2026/corporacion_favorita_grocery_sales_forecasting/ipynb/../mlruns/794350610558717035/models/m-19206c6c0d864e839ab24af4f413b3ca/artifacts
+flavors:
+  python_function:
+    data: model.ubj
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.xgboost
+    python_version: 3.11.15
+  xgboost:
+    code: null
+    data: model.ubj
+    model_class: xgboost.sklearn.XGBRegressor
+    model_format: ubj
+    xgb_version: 3.2.0
+mlflow_version: 3.11.1
+model_id: m-19206c6c0d864e839ab24af4f413b3ca
+model_size_bytes: 375702
+model_uuid: m-19206c6c0d864e839ab24af4f413b3ca
+prompts: null
+run_id: 37b4a874ccbb4e72a5b94aed63617510
+utc_time_created: '2026-05-01 19:49:59.501852'

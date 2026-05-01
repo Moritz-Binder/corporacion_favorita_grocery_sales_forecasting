@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/moe/Developer/work-projects/MIST/TimeSeries_April2026/corporacion_favorita_grocery_sales_forecasting/ipynb/../mlruns/539079688479096325/2f97d75587ab4aadb1265d61d5bbc974/artifacts
+end_time: 1777624747843
+entry_point_name: ''
+experiment_id: '539079688479096325'
+lifecycle_stage: active
+run_id: 2f97d75587ab4aadb1265d61d5bbc974
+run_name: Champion_SARIMAX
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1777624746580
+status: 3
+tags: []
+user_id: moe
