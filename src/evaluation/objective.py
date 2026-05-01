@@ -231,3 +231,29 @@ class TimeSeriesOptimizer:
                 final_model.save(model_path)
                 mlflow.log_artifact(model_path, artifact_path="model")
                 os.remove(model_path)
+
+class MLObjective:
+    """
+    Handles standard ML models (XGB, RF, LR) that require 
+    tabular data (X, y) rather than Darts TimeSeries.
+    """
+    def __init__(self, X, y, model_class, metric, cv_splitter):
+        self.X = X
+        self.y = y
+        self.model_class = model_class
+        self.metric = metric
+        self.cv_splitter = cv_splitter
+
+    def __call__(self, params):
+        # 1. Handle Feature Selection (similar to your Darts logic)
+        # 2. Instantiate Model
+        model = self.model_class(**params)
+        
+        # 3. Cross-Validation (Time Series Split)
+        scores = []
+        for train_idx, val_idx in self.cv_splitter.split(self.X):
+            model.fit(self.X.iloc[train_idx], self.y.iloc[train_idx])
+            preds = model.predict(self.X.iloc[val_idx])
+            scores.append(self.metric(self.y.iloc[val_idx], preds))
+        
+        return {'loss': np.mean(scores), 'status': STATUS_OK}
