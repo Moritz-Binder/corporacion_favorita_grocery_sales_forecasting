@@ -1,0 +1,10 @@
+artifact_location: file:///Users/moe/Developer/work-projects/MIST/TimeSeries_April2026/corporacion_favorita_grocery_sales_forecasting/ipynb/../mlruns/405223669652462103/models/m-ce9c7eea0a0248d9b2a74df76709094a/artifacts
+creation_timestamp: 1777666613576
+experiment_id: '405223669652462103'
+last_updated_timestamp: 1777666615839
+model_id: m-ce9c7eea0a0248d9b2a74df76709094a
+model_type: null
+name: model
+source_run_id: 70e89ac81cb641659489110ce3321b98
+status: 2
+status_message: null

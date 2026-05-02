@@ -313,7 +313,7 @@ class MLRecursiveObjective:
     def __call__(self, params):
         # 1. Parameter Clean-up (Hyperopt specific)
         int_params = [
-            'n_estimators', 'max_depth', 'min_samples_split'
+            'n_estimators', 'max_depth', 'min_samples_split', 'max_iter', 'min_samples_leaf'
         ]
         # 1. Feature Selection Logic
         # Extract the list of chosen features from the space
@@ -422,7 +422,7 @@ class MLOptimizer:
         best_params = best_trial['result']['params']
         best_loss = best_trial['result']['loss']
         int_params = [
-            'n_estimators', 'max_depth', 'min_samples_split'
+            'n_estimators', 'max_depth', 'min_samples_split', 'max_iter', 'min_samples_leaf'
         ]
         
         with mlflow.start_run(run_name=f"Champion_{model_name}") as run:

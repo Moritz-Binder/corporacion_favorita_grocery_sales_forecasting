@@ -1,0 +1,8 @@
+artifact_location: file:///Users/moe/Developer/work-projects/MIST/TimeSeries_April2026/corporacion_favorita_grocery_sales_forecasting/ipynb/../mlruns/436300554146109364
+creation_time: 1777666617383
+experiment_id: '436300554146109364'
+last_update_time: 1777666617383
+lifecycle_stage: active
+name: RandomForest_7
+trace_location: null
+workspace: default
