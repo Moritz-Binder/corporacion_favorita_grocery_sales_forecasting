@@ -121,7 +121,7 @@ class TimeSeriesOptimizer:
         mlflow.set_experiment(self.experiment_name)
 
     def optimize_and_log(self, model_name, model_class, space, series, horizon, metric, exog=None, max_evals=50):
-        trials_path = os.path.join(self.trials_dir, f"{model_name}_trials.pkl")
+        trials_path = os.path.join(self.trials_dir, f"{model_name}_{str(horizon)}_trials.pkl")
         
         # 1. Load existing trials for batching
         if os.path.exists(trials_path):
@@ -387,7 +387,7 @@ class MLOptimizer:
         mlflow.set_experiment(self.experiment_name)
 
     def optimize_ml_model(self, model_name, model_class, space, df, target_col, date_col,lag_list,rolling_list, metric, start_ratio=0.7, step_size=7, max_evals=30):
-        trials_path = os.path.join(self.trials_dir, f"{model_name}_trials.pkl")
+        trials_path = os.path.join(self.trials_dir, f"{model_name}_{str(step_size)}_trials.pkl")
         
         if os.path.exists(trials_path):
             with open(trials_path, "rb") as f:
