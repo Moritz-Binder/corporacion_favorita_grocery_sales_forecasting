@@ -1,0 +1,8 @@
+artifact_location: file:///Users/moe/Developer/work-projects/MIST/TimeSeries_April2026/corporacion_favorita_grocery_sales_forecasting/ipynb/../mlruns/545029607147644247
+creation_time: 1777754392918
+experiment_id: '545029607147644247'
+last_update_time: 1777754392918
+lifecycle_stage: active
+name: 30_day_forecast
+trace_location: null
+workspace: default

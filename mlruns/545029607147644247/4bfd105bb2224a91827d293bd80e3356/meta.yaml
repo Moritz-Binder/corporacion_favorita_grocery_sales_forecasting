@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/moe/Developer/work-projects/MIST/TimeSeries_April2026/corporacion_favorita_grocery_sales_forecasting/ipynb/../mlruns/545029607147644247/4bfd105bb2224a91827d293bd80e3356/artifacts
+end_time: 1777822200774
+entry_point_name: ''
+experiment_id: '545029607147644247'
+lifecycle_stage: active
+run_id: 4bfd105bb2224a91827d293bd80e3356
+run_name: Champion_XGBoost
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1777822198203
+status: 3
+tags: []
+user_id: moe
