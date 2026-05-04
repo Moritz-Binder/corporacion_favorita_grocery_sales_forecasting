@@ -1,0 +1,23 @@
+artifact_path: file:///Users/moe/Developer/work-projects/MIST/TimeSeries_April2026/corporacion_favorita_grocery_sales_forecasting/ipynb/../mlruns/511031961185323583/models/m-4a907d57ff574345907350ddfc89d2b1/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.11.15
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.8.0
+    skops_trusted_types: null
+mlflow_version: 3.11.1
+model_id: m-4a907d57ff574345907350ddfc89d2b1
+model_size_bytes: 2554554
+model_uuid: m-4a907d57ff574345907350ddfc89d2b1
+prompts: null
+run_id: 3703621804904fe4a2bb1fea4adbe85e
+utc_time_created: '2026-05-03 22:23:56.427034'
