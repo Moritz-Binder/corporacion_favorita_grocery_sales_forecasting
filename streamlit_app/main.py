@@ -416,7 +416,8 @@ st.sidebar.header("Filter Settings")
 
 # Determine global min and max dates for the slicer
 min_date = actual_sales.index.min().date()
-max_date = actual_sales.index.max().date()
+max_date = df_forecast[date_col].min().date()
+max_forecast = pd.to_datetime(df_forecast[date_col].max().date())
 
 # Default start date (e.g., 120 days back from the latest observation)
 default_start = pd.to_datetime(max_date) - pd.DateOffset(days=120)
@@ -457,7 +458,7 @@ else:
 # Filter the oil/events dataframe for the same period
 plot_events = timeseries_oil[
     (timeseries_oil[date_col] >= start_date) &
-    (timeseries_oil[date_col] <= end_date)
+    (timeseries_oil[date_col] <= max_forecast)
 ]
 
 # 4. Plotting (Using matplotlib/seaborn as imported)

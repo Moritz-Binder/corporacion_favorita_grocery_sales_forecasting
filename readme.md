@@ -15,6 +15,8 @@ The solution focuses on:
 - comparing classical and machine learning forecasting approaches,
 - serving predictions through a lightweight Streamlit interface.
 
+![Project Forecast Architecture](./pics/Streamlit_App.png)
+
 ## Data Architecture & Provenance
 
 The dataset is derived from the Kaggle "Corporación Favorita Grocery Sales Forecasting" competition. The repository includes a simplified daily sales view and supporting external signals to improve forecast quality.
@@ -129,6 +131,21 @@ streamlit run streamlit_app/main.py
 ```
 
 Then open the local URL shown in the terminal (typically `http://localhost:8501`).
+
+## Functionalities
+
+### Date slicer
+Slices the historical data visualized
+
+#### Holiday Flag
+Displays Holidays on the chart.
+
+![Project Forecast Architecture](./pics/Hilight_Holidays.png)
+
+#### Payday Flag
+Displays paydays on the chart.
+
+![Project Forecast Architecture](./pics/Hilight_Paydays.png)
 
 ## Future Improvements
 
