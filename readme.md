@@ -140,12 +140,12 @@ Slices the historical data visualized
 #### Holiday Flag
 Displays Holidays on the chart.
 
-![Project Forecast Architecture](./pics/Hilight_Holidays.png)
+![Project Forecast Architecture](./pics/Highlight_Holidays.png)
 
 #### Payday Flag
 Displays paydays on the chart.
 
-![Project Forecast Architecture](./pics/Hilight_Paydays.png)
+![Project Forecast Architecture](./pics/Highlight_Paydays.png)
 
 ## Future Improvements
 
