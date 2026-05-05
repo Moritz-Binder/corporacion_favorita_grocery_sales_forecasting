@@ -6,6 +6,38 @@ import mlflow
 from hyperopt import fmin, tpe, Trials, STATUS_OK
 from darts.metrics import mape, rmse
 from sklearn.metrics import mean_absolute_error
+import json
+import copy
+
+import mlflow.pyfunc
+# ---------------------------------------------------------
+# 1. THE Darts Helper Function for MLflow Logging
+# ---------------------------------------------------------
+class DartsTranslator(mlflow.pyfunc.PythonModel):
+    
+    def load_context(self, context):
+        """
+        This method is called by MLflow when the model is loaded.
+        'context.artifacts' is a dictionary mapping your labels to the actual file paths.
+        """
+        from darts.models import RegressionModel # or your specific Darts class
+        # We load the model from the path provided by MLflow's artifact store
+        self.model = RegressionModel.load(context.artifacts["darts_checkpoint"])
+
+    def predict(self, context, model_input):
+        """
+        Darts usually predicts 'n' steps ahead. 
+        You can decide how your model_input triggers the forecast.
+        """
+        # Example: If model_input is an integer, predict that many steps
+        if isinstance(model_input, int):
+            forecast = self.model.predict(n=model_input)
+        else:
+            # Or if it's a dataframe, predict based on its length
+            forecast = self.model.predict(n=len(model_input))
+            
+        return forecast.values() # Return as a numpy array/list for compatibility
+
 
 # ---------------------------------------------------------
 # 1. THE HYPEROPT OBJECTIVE
@@ -160,14 +192,18 @@ class TimeSeriesOptimizer:
     def _log_champion(self, model_name, model_class, trials, series, exog, trials_path):
         # Extract the best parameters and loss from the trials object
         best_trial = trials.best_trial
-        best_params = best_trial['result']['params']
+        best_params = copy.deepcopy(best_trial['result']['params'])
         best_loss = best_trial['result']['loss']
 
         # Expanded integer list to include seasonal components
         int_params = [
             'p', 'd', 'q', 'P', 'D', 'Q', 's'
         ]
-        
+        if 'selected_features' in best_params:
+            selected_features = [f for f in best_params['selected_features'] if f is not None]
+        else:
+            selected_features = None
+
         with mlflow.start_run(run_name=f"Champion_{model_name}") as run:
             print(f"Logging Champion {model_name} to MLflow...")
 
@@ -220,12 +256,30 @@ class TimeSeriesOptimizer:
             
             # Attach the trials history as a file so you don't lose the R&D data
             mlflow.log_artifact(trials_path, artifact_path="hyperopt_history")
+
+            features = {"features": selected_features if selected_features is not None else []}
+            with open("features.json", "w") as f:
+                json.dump(features, f)
+
+            mlflow.log_artifact("features.json")
             
             # Log the final model
             # Note: Depending on your MLflow version, you might need to use mlflow.pyfunc 
             # or save the model locally via final_model.save() and log it as an artifact.
             try:
-                mlflow.darts.log_model(final_model, artifact_path="model")
+                model_path = f"{model_name}_best.pkl"
+                final_model.save(model_path)
+                artifacts = {
+                    "darts_checkpoint": model_path
+                }
+                mlflow.pyfunc.log_model(
+                                name="model",
+                                python_model=DartsTranslator(),
+                                artifacts=artifacts,
+                                # Optional: Add the environment to ensure the right version of Darts is installed later
+                                pip_requirements=["darts==0.43.0"] 
+                            )
+                os.remove(model_path)
             except AttributeError:
                 # Fallback if darts flavor is missing in your mlflow version
                 model_path = f"{model_name}_best.pkl"
@@ -419,12 +473,15 @@ class MLOptimizer:
     def _log_ml_champion(self, model_name, model_class, trials, df, target_col, date_col, trials_path):
         # Extract the best parameters and loss from the trials object
         best_trial = trials.best_trial
-        best_params = best_trial['result']['params']
+        best_params = copy.deepcopy(best_trial['result']['params'])
         best_loss = best_trial['result']['loss']
         int_params = [
             'n_estimators', 'max_depth', 'min_samples_split', 'max_iter', 'min_samples_leaf'
         ]
-        
+        if 'selected_features' in best_params:
+            selected_features = [f for f in best_params['selected_features'] if f is not None]
+        else:
+            selected_features = None
         with mlflow.start_run(run_name=f"Champion_{model_name}") as run:
             print(f"Logging Champion {model_name} to MLflow...")
 
@@ -463,7 +520,13 @@ class MLOptimizer:
             final_model.fit(X, y)
             
             # Save trials history
-            mlflow.log_artifact(trials_path)
+            mlflow.log_artifact(trials_path, artifact_path="hyperopt_history")
+
+            features = {"features": selected_features if selected_features is not None else []}
+            with open("features.json", "w") as f:
+                json.dump(features, f)
+
+            mlflow.log_artifact("features.json")
             
             # Log Model based on library
             if "XGB" in str(model_class):
