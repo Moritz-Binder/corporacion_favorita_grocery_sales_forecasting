@@ -23,7 +23,8 @@ Primary data sources:
 - `data/raw/timeseries.csv` — daily unit sales series used as the target and for lag-based feature generation.
 - `data/raw/oil.csv` — oil price time series used as an exogenous signal.
 - `data/raw/holidays.csv` — holiday calendar used for seasonal and event-aware features.
-- `data/processed/timeseries_ABT.csv` — engineered analytic base table used for modeling.
+- `data/processed/holidays.csv` — holiday calendar filtered down to one city/province used for seasonal and event-aware features.
+- `data/processed/timeseries_ABT.csv` — engineered analytic base table used for modeling testing.
 
 Target and features:
 - Target variable: `unit_sales` (daily sales count for the item/store combination)
@@ -85,7 +86,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. Ensure the data files exist in `data/raw/` and `data/processed/`.
+4. Ensure the data files exist in `data/raw/`.
 
 5. Start the app:
 
@@ -93,7 +94,7 @@ pip install -r requirements.txt
 streamlit run streamlit_app/main.py
 ```
 
-> Note: The Streamlit app currently connects to an MLflow tracking server at `http://127.0.0.1:5000`. Make sure your MLflow server is running and your best models are registered if you want the full production workflow to function.
+> Note: The Streamlit app currently connects to an MLflow tracking server at `http://127.0.0.1:5000`. Make sure your MLflow server is running and your best models are registered if you want the full production workflow to function. Also tag the registered models with the forecast tag (weekly/monthly/quarterly) based on the forecast horizon it was optimized for and the active tag for the current model for production for each forecasting horizon. The model name must intale the used model, since the pipeline uses this information for choosing the right model for predicting.
 
 ## Modeling Approach
 
