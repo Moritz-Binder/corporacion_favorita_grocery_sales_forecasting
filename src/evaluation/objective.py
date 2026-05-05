@@ -63,19 +63,19 @@ class DartsObjective:
         # 1. Feature Selection Logic
         # Extract the list of chosen features from the space
         # If 'selected_features' isn't in params, it defaults to all features
+        selected_features = []
         if self.exog is not None:
             # 2. Check if this specific model actually tuned 'selected_features'
             if 'selected_features' in params:
                 selected_features = [f for f in params['selected_features'] if f is not None]
                 params.pop('selected_features', None)
 
-                if not selected_features: # More Pythonic check for an empty list
+                if not selected_features:
                     current_exog = None
                 else:
                     current_exog = self.exog[selected_features]
             else:
                 # Fallback: The model is given exog data, but didn't tune feature selection.
-                # We default to passing all available exogenous features.
                 current_exog = self.exog
         else:
             current_exog = None
@@ -290,16 +290,14 @@ class TimeSeriesOptimizer:
 # ---------------------------------------------------------
 # 3. Forecast Function
 # ---------------------------------------------------------
-def forecasting_pipeline(model, y_train, x_dates, num_days, test, test_dates, lag_list, rolling_list, selceted_featurs, target):
-    """
-    Upgraded recursive forecast with dynamic lag and rolling window generation.
-    """
+def forecasting_pipeline(model, y_train, x_dates, num_days, test, test_dates, lag_list, rolling_list, selected_features, target):
+    """Create recursive forecasts for a model that requires lag and rolling features."""
     import pandas as pd
     import numpy as np
 
-    # Create history starting with the end of training data
     history = y_train.copy().set_index(x_dates)
     xogen = test.copy().set_index(test_dates)
+    xogen = xogen.loc[:, ~xogen.columns.str.contains('lag|rolling', case=False)]
     last_date = history.index[-1]
     future = []
 
@@ -307,33 +305,23 @@ def forecasting_pipeline(model, y_train, x_dates, num_days, test, test_dates, la
         next_date = last_date + pd.Timedelta(days=1)
         feature_dict = {}
 
-        # --- Dynamic Lags ---
         for lag in lag_list:
             feature_dict[f'{target}_lag_{lag}'] = [history[target].iloc[-lag]]
 
-        # --- Dynamic Rolling Stats ---
         for window in rolling_list:
             feature_dict[f'{target}_rolling_{window}_mean'] = [history[target].iloc[-window:].mean()]
             feature_dict[f'{target}_rolling_{window}_std'] = [history[target].iloc[-window:].std()]
 
-        # Create row DataFrame
         row = pd.DataFrame(data=feature_dict, index=[next_date])
-        
-        # Merge with exogenous variables (holidays, prices, etc.)
-        xogen = xogen.loc[:, ~xogen.columns.str.contains('lag|rolling', case=False)]
         rows = row.merge(xogen, how='left', left_index=True, right_index=True)
-        
-        # CRITICAL: Ensure column order matches exactly what the model was trained on
-        # This assumes the test dataframe columns are in the correct order
-        rows = rows[selceted_featurs]
+        rows = rows[selected_features]
 
         if rows.isnull().any().any():
             rows = rows.fillna(0)
 
-        # Predict and update history
         y_hat = model.predict(rows)[0]
         future.append(y_hat)
-        
+
         history = pd.concat([history, pd.DataFrame(data={'unit_sales': y_hat}, index=[next_date])])
         last_date = next_date
 
@@ -374,13 +362,13 @@ class MLRecursiveObjective:
             # 2. Check if this specific model actually tuned 'selected_features'
         if 'selected_features' in params:
             selected_features = [f for f in params['selected_features'] if f is not None]
-            total_clomns = [self.date_col, self.target_col] + selected_features
+            total_columns = [self.date_col, self.target_col] + selected_features
             params.pop('selected_features', None)
 
             if not selected_features: # More Pythonic check for an empty list
                 current_df = self.df[[self.target_col, self.date_col]]
             else:
-                current_df = self.df[total_clomns]
+                current_df = self.df[total_columns]
         else:
             # Fallback: The model is given exog data, but didn't tune feature selection.
             # We default to passing all available exogenous features.
@@ -421,7 +409,7 @@ class MLRecursiveObjective:
                 test_dates=test_df[self.date_col],
                 lag_list=self.lag_list,
                 rolling_list=self.rolling_list,
-                selceted_featurs=selected_features,
+                selected_features=selected_features,
                 target=self.target_col
             )
             
@@ -491,13 +479,13 @@ class MLOptimizer:
             
             if 'selected_features' in best_params:
                 selected_features = [f for f in best_params['selected_features'] if f is not None]
-                total_clomns = selected_features + [self.target_col, self.date_col]
+                total_columns = selected_features + [self.target_col, self.date_col]
                 best_params.pop('selected_features', None)
 
                 if not selected_features: # More Pythonic check for an empty list
                     current_df = df[[self.target_col, self.date_col]]
                 else:
-                    current_df = df[total_clomns]
+                    current_df = df[total_columns]
             else:
                 # Fallback: The model is given exog data, but didn't tune feature selection.
                 # We default to passing all available exogenous features.

@@ -1,3 +1,10 @@
+"""Streamlit application for forecasting grocery sales using a mix of model approaches.
+
+This app loads preprocessed sales data, retrieves registered models from MLflow,
+trains the forecast pipeline, and displays results for weekly, monthly, and
+quarterly horizons.
+"""
+
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
@@ -24,6 +31,28 @@ PROJECT_PATH = BASE_DIR.parent
 
 @st.cache_data
 def data_prep(path, date, lags_var, windows_var, target, max_forecast_horizon):
+    """Prepare data, load models from MLflow, and generate forecast series.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        Base path to the repository data directory.
+    date : str
+        Name of the date column in the time series data.
+    lags_var : list[int]
+        Lag offsets used to generate autoregressive features.
+    windows_var : list[int]
+        Rolling window sizes used to compute rolling statistics.
+    target : str
+        Target column name for the forecast model.
+    max_forecast_horizon : int
+        Maximum horizon used to reserve the inference window.
+
+    Returns
+    -------
+    tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]
+        actual sales, weekly forecast, monthly forecast, quarterly forecast, and integrated feature table.
+    """
     #-----------------
     # Define Functions
     #-----------------
@@ -35,6 +64,7 @@ def data_prep(path, date, lags_var, windows_var, target, max_forecast_horizon):
         # Create history starting with the end of training data
         history = y_train.copy().set_index(x_dates)
         xogen = test.copy().set_index(test_dates)
+        xogen = xogen.loc[:, ~xogen.columns.str.contains('lag|rolling', case=False)]
         last_date = history.index[-1]
         future = []
 
@@ -53,13 +83,11 @@ def data_prep(path, date, lags_var, windows_var, target, max_forecast_horizon):
 
             # Create row DataFrame
             row = pd.DataFrame(data=feature_dict, index=[next_date])
-            
+
             # Merge with exogenous variables (holidays, prices, etc.)
-            xogen = xogen.loc[:, ~xogen.columns.str.contains('lag|rolling', case=False)]
             rows = row.merge(xogen, how='left', left_index=True, right_index=True)
-            
-            # CRITICAL: Ensure column order matches exactly what the model was trained on
-            #list_columns = [c for c in rows.columns if c != target]
+
+            # Preserve the feature order used during training
             rows = rows[selected_features]
 
             # This assumes the test dataframe columns are in the correct order
@@ -148,8 +176,15 @@ def data_prep(path, date, lags_var, windows_var, target, max_forecast_horizon):
             model.fit(data.drop(columns=[target, date])[:-max_forecast_horizon], data[target][:-max_forecast_horizon])
         else:
             series = TimeSeries.from_dataframe(data[:-max_forecast_horizon], date, target)
-            future_covariance = TimeSeries.from_dataframe(data.drop(columns=[target])[:-max_forecast_horizon], date,data.loc[:, ~data.columns.str.contains('lag|rolling|index', case=False)].drop(columns=[target, date]).columns.to_list())
-            model.fit(series, future_covariance)
+            future_covariance = TimeSeries.from_dataframe(
+                data.drop(columns=[target])[:-max_forecast_horizon],
+                date,
+                data.loc[:, ~data.columns.str.contains('lag|rolling|index', case=False)]
+                    .drop(columns=[target, date])
+                    .columns
+                    .to_list()
+            )
+            model.fit(series, future_covariates=future_covariance)
 
         if "Prophet" not in dict["model_name"]:
             selected_columns = data.drop(columns=[target, date]).columns.to_list()
@@ -268,16 +303,60 @@ def data_prep(path, date, lags_var, windows_var, target, max_forecast_horizon):
     actual_sales['date'] = pd.to_datetime(actual_sales['date'])
     actual_sales = actual_sales.set_index('date')
 
-    forecast_weekly = forecasting_pipeline(weekly_model_fitted[0], timeseries_oil[[target,date]].copy()[:-90], date, 7, timeseries_oil, date, lags_var, windows_var, target, weekly_model_fitted[1])
+    training_frame = timeseries_oil[[target, date]].copy()[:-max_forecast_horizon]
+    train_last_date = pd.to_datetime(training_frame[date].iloc[-1])
+
+    forecast_weekly = forecasting_pipeline(
+        weekly_model_fitted[0],
+        training_frame,
+        date,
+        7,
+        timeseries_oil,
+        date,
+        lags_var,
+        windows_var,
+        target,
+        weekly_model_fitted[1]
+    )
     forecast_weekly = pd.DataFrame(forecast_weekly, columns=['y_hat'])
-    forecast_weekly = forecast_weekly.set_index(timeseries_oil[date].copy()[-max_forecast_horizon:-max_forecast_horizon+7])
+    forecast_weekly.index = pd.date_range(
+        start=train_last_date + pd.Timedelta(days=1),
+        periods=7,
+        freq='D'
+    )
+    forecast_weekly = forecast_weekly.reset_index().rename(columns={'index': date})
 
-    forecast_monthly = forecasting_pipeline(monthly_model_fitted[0], timeseries_oil[[target,date]].copy()[:-90], date, 30, timeseries_oil, date, lags_var, windows_var, target, monthly_model_fitted[1])
+    forecast_monthly = forecasting_pipeline(
+        monthly_model_fitted[0],
+        training_frame,
+        date,
+        30,
+        timeseries_oil,
+        date,
+        lags_var,
+        windows_var,
+        target,
+        monthly_model_fitted[1]
+    )
     forecast_monthly = pd.DataFrame(forecast_monthly, columns=['y_hat'])
-    forecast_monthly = forecast_monthly.set_index(timeseries_oil[date].copy()[-max_forecast_horizon:-max_forecast_horizon+30])
+    forecast_monthly.index = pd.date_range(
+        start=train_last_date + pd.Timedelta(days=1),
+        periods=30,
+        freq='D'
+    )
+    forecast_monthly = forecast_monthly.reset_index().rename(columns={'index': date})
 
-    forecast_quarterly = quarterly_model_fitted[0].predict(n=90,future_covariates=TimeSeries.from_dataframe(timeseries_oil[-max_forecast_horizon:], time_col=date, value_cols=quarterly_model_fitted[1]))
-    forecast_quarterly = forecast_quarterly.to_dataframe()
+    forecast_quarterly = quarterly_model_fitted[0].predict(
+        n=90,
+        future_covariates=TimeSeries.from_dataframe(
+            timeseries_oil[-max_forecast_horizon:],
+            time_col=date,
+            value_cols=quarterly_model_fitted[1]
+        )
+    )
+    forecast_quarterly = forecast_quarterly.to_dataframe().reset_index()
+    if date not in forecast_quarterly.columns:
+        forecast_quarterly = forecast_quarterly.rename(columns={forecast_quarterly.columns[0]: date})
 
     return (actual_sales, forecast_weekly, forecast_monthly, forecast_quarterly, timeseries_oil)
 
@@ -337,11 +416,10 @@ st.sidebar.header("Filter Settings")
 
 # Determine global min and max dates for the slicer
 min_date = actual_sales.index.min().date()
-# The max date should account for the future forecast horizon
-max_date = pd.to_datetime("2014-01-01").date()
+max_date = actual_sales.index.max().date()
 
-# Default start date (e.g., 1 year back from the last actual sales date to avoid clutter)
-default_start = max_date - pd.DateOffset(days=120)
+# Default start date (e.g., 120 days back from the latest observation)
+default_start = pd.to_datetime(max_date) - pd.DateOffset(days=120)
 if default_start < pd.Timestamp(min_date):
     default_start = pd.Timestamp(min_date)
 
@@ -368,16 +446,19 @@ if len(date_range) == 2:
     start_date, end_date = date_range
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
-    
+
     # Filter actuals
     mask_actual = (actual_sales.index >= start_date) & (actual_sales.index <= end_date)
-    plot_actual = actual_sales.loc[mask_actual]
+    plot_actual = actual_sales.loc[mask_actual].reset_index()
 else:
     # Fallback if the user hasn't selected a full range yet
-    plot_actual = actual_sales.copy()
+    plot_actual = actual_sales.copy().reset_index()
 
 # Filter the oil/events dataframe for the same period
-plot_events = timeseries_oil[(timeseries_oil[date_col] >= start_date) & (timeseries_oil[date_col] <= pd.to_datetime(df_forecast.index.max().date()))]
+plot_events = timeseries_oil[
+    (timeseries_oil[date_col] >= start_date) &
+    (timeseries_oil[date_col] <= end_date)
+]
 
 # 4. Plotting (Using matplotlib/seaborn as imported)
 st.subheader(f"{forecast_option} vs Actual Sales")
@@ -436,11 +517,14 @@ st.subheader("Data View")
 df_forecast[forecast_target_col] = df_forecast[forecast_target_col].astype('int')
 
 # Standardize column names for clean merging
-temp_actual = plot_actual[[actual_target_col]].copy().rename(columns={actual_target_col: 'Actual Sales'})
-temp_forecast = df_forecast[[forecast_target_col]].copy().rename(columns={forecast_target_col: 'Predicted Sales'})
+temp_actual = plot_actual[[date_col, actual_target_col]].copy().rename(columns={actual_target_col: 'Actual Sales'})
+temp_actual = temp_actual.set_index(date_col)
+
+temp_forecast = df_forecast[[date_col, forecast_target_col]].copy().rename(columns={forecast_target_col: 'Predicted Sales'})
+temp_forecast = temp_forecast.set_index(date_col)
 
 # Merge on date to align actuals and predictions
-merged_df = pd.merge(temp_actual, temp_forecast, right_index=True, left_index=True, how='outer').sort_values(date_col)
+merged_df = pd.merge(temp_actual, temp_forecast, right_index=True, left_index=True, how='outer').sort_index()
 
 # Convert dates back to string format for cleaner display in the table
 merged_df[date_col] = merged_df.index.strftime('%Y-%m-%d')

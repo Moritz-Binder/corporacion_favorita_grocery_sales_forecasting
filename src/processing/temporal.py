@@ -1,27 +1,30 @@
+import warnings
 import pandas as pd
-import numpy as np
 import holidays
 from sklearn.base import BaseEstimator, TransformerMixin
 
-class DateFeatureTransformer(BaseEstimator, TransformerMixin):
-    """
-    A professional-grade transformer for flexible date feature engineering.
 
-    Parameters:
-    - column_name: str
+class DateFeatureTransformer(BaseEstimator, TransformerMixin):
+    """Create temporal features from a date column.
+
+    Parameters
+    ----------
+    column_name : str
         The name of the date column to transform.
-    - features: list of str, optional (default=['year', 'month', 'day_of_week', 'is_weekend'])
-        A list of date features to extract. Supported features include:
-        'year', 'month', 'day_of_week', 'is_weekend', 'is_payday'.
-    - payday_val: int, optional (default=15)
-        The day of the month considered as payday for the 'is_payday' feature.
-    - country: str, optional (default='EC')
-        The country code for holiday calculations (e.g., 'EC', 'US', 'UK', 'DE').
-    - subdiv: str, optional (default='P')
-        The subdivision code for holiday calculations (e.g., P: Pichincha (Quito), G: Guayas (Guayaquil), A: Azuay (Cuenca), M: Manabí (Manta)).
+    features : list of str, optional
+        List of date-derived features to generate.
+    payday_val : int, default 15
+        The day-of-month treated as a payday for the 'is_payday' feature.
+    country : str, default 'EC'
+        Country code for holiday lookup.
+    subdiv : str, optional
+        Subdivision code for holiday lookup.
+    drop_date_col : bool, default True
+        Whether to drop the original date column after transformation.
     """
-    def __init__(self, 
-                 column_name: str, 
+
+    def __init__(self,
+                 column_name: str,
                  features: list = ['year', 'month', 'day_of_week', 'is_weekend', 'is_holiday'],
                  payday_val: int = 15,
                  country: str = 'EC',
@@ -36,16 +39,13 @@ class DateFeatureTransformer(BaseEstimator, TransformerMixin):
         self.drop_date_col = drop_date_col
 
     def fit(self, X, y=None):
-        # We pre-calculate holidays during fit to ensure consistency 
-        # and speed up the transform step.
         date_series = pd.to_datetime(X[self.column_name])
         start_year = date_series.dt.year.min()
         end_year = date_series.dt.year.max()
-        
-        # Populate holiday dictionary for the range of years in the data
+
         self.holiday_lookup = holidays.CountryHoliday(
             self.country,
-            subdiv=self.subdiv, 
+            subdiv=self.subdiv,
             years=range(start_year, end_year + 1)
         )
         return self
@@ -54,7 +54,7 @@ class DateFeatureTransformer(BaseEstimator, TransformerMixin):
         X_out = X.copy()
         if self.column_name not in X_out.columns:
             raise ValueError(f"Column '{self.column_name}' not found.")
-        
+
         date_series = pd.to_datetime(X_out[self.column_name])
 
         feature_map = {
@@ -63,7 +63,7 @@ class DateFeatureTransformer(BaseEstimator, TransformerMixin):
             'day_of_week': lambda ds: ds.dt.dayofweek,
             'is_weekend': lambda ds: ds.dt.dayofweek.isin([5, 6]).astype(int),
             'is_holiday': lambda ds: ds.apply(lambda x: 1 if x in self.holiday_lookup else 0),
-            'is_payday': lambda ds: ((ds.dt.day == self.payday_val) | 
+            'is_payday': lambda ds: ((ds.dt.day == self.payday_val) |
                                      (ds.dt.day > ds.dt.day.shift(-1))).astype(int)
         }
 
@@ -71,10 +71,9 @@ class DateFeatureTransformer(BaseEstimator, TransformerMixin):
             if feature in feature_map:
                 X_out[f"{self.column_name}_{feature}"] = feature_map[feature](date_series)
             else:
-                print(f"Warning: Feature '{feature}' not recognized.")
+                warnings.warn(f"Feature '{feature}' is not supported and will be skipped.", UserWarning)
 
-        if self.drop_date_col: 
-                X_out = X_out.drop(columns=[self.column_name])
-        else:
-                X_out = X_out
+        if self.drop_date_col:
+            X_out = X_out.drop(columns=[self.column_name])
+
         return X_out

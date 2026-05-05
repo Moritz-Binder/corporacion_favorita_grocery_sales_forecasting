@@ -1,19 +1,19 @@
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
-import numpy as np
+
 
 class LagFeatureTransformer(BaseEstimator, TransformerMixin):
+    """Generate lag features for one or more numeric columns.
+
+    Parameters
+    ----------
+    column_lag : dict
+        Mapping of column names to lists of lag offsets, e.g. {'unit_sales': [1, 7, 30]}.
+    fill_method : str, default 'none'
+        Strategy for filling NaN values created by lagging.
+        Options are 'none', 'zeros', 'ffill', and 'bfill'.
     """
-    Generates lag features for specified numeric columns.
-    
-    Parameters:
-    - columns: list of str
-        The numeric columns to create lags for.
-    - lags: list of int
-        The lag offsets (e.g., [1, 7, 30] for yesterday, last week, last month).
-    - fill_method: str, default='none'
-        Whether to fill NaN values created by lagging. Options: 'none' (keep NaN), 'zeros' (fill with 0), 'ffill' (forward fill), 'bfill' (backward fill).
-    """
+
     def __init__(self, column_lag: dict, fill_method: str = 'none'):
         self.column_lag = column_lag
         self.fill_strategy = fill_method
@@ -23,11 +23,11 @@ class LagFeatureTransformer(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         X_out = X.copy()
-        
-        for key, value in self.column_lag.items():
-            for lag in value:
-                X_out[f"{key}_lag_{lag}"] = X_out[key].shift(lag)
-        
+
+        for column, lags in self.column_lag.items():
+            for lag in lags:
+                X_out[f"{column}_lag_{lag}"] = X_out[column].shift(lag)
+
         if self.fill_strategy == 'zeros':
             X_out = X_out.fillna(0)
         elif self.fill_strategy == 'ffill':
@@ -35,24 +35,24 @@ class LagFeatureTransformer(BaseEstimator, TransformerMixin):
         elif self.fill_strategy == 'bfill':
             X_out = X_out.bfill().fillna(0)
         elif self.fill_strategy == 'none':
-            pass  # Keep NaN values for lagged features
+            pass
         else:
-            raise ValueError(f"Unsupported fill method: {self.fill_method}")                            
-            
+            raise ValueError(f"Unsupported fill method: {self.fill_strategy}")
+
         return X_out
 
+
 class WindowFeatureTransformer(BaseEstimator, TransformerMixin):
+    """Generate rolling-window features for one or more numeric columns.
+
+    Parameters
+    ----------
+    column_lag : dict
+        Mapping of column names to rolling window sizes, e.g. {'unit_sales': [7, 14, 21]}.
+    fill_method : str, default 'none'
+        Strategy for filling NaN values created during rolling-window calculation.
     """
-    Generates lag features for specified numeric columns.
-    
-    Parameters:
-    - columns: list of str
-        The numeric columns to create lags for.
-    - lags: list of int
-        The lag offsets (e.g., [1, 7, 30] for yesterday, last week, last month).
-    - fill_method: str, default='none'
-        Whether to fill NaN values created by lagging. Options: 'none' (keep NaN), 'zeros' (fill with 0), 'ffill' (forward fill), 'bfill' (backward fill).
-    """
+
     def __init__(self, column_lag: dict, fill_method: str = 'none'):
         self.column_lag = column_lag
         self.fill_strategy = fill_method
@@ -62,12 +62,16 @@ class WindowFeatureTransformer(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         X_out = X.copy()
-        
-        for key, value in self.column_lag.items():
-            for lag in value:
-                X_out[f"{key}_rolling_{lag}_mean"] = X_out[key].rolling(window=lag, closed='left', ).mean()
-                X_out[f"{key}_rolling_{lag}_std"] = X_out[key].rolling(window=lag, closed='left', ).std()
-        
+
+        for column, windows in self.column_lag.items():
+            for window in windows:
+                X_out[f"{column}_rolling_{window}_mean"] = (
+                    X_out[column].rolling(window=window, closed='left').mean()
+                )
+                X_out[f"{column}_rolling_{window}_std"] = (
+                    X_out[column].rolling(window=window, closed='left').std()
+                )
+
         if self.fill_strategy == 'zeros':
             X_out = X_out.fillna(0)
         elif self.fill_strategy == 'ffill':
@@ -75,8 +79,8 @@ class WindowFeatureTransformer(BaseEstimator, TransformerMixin):
         elif self.fill_strategy == 'bfill':
             X_out = X_out.bfill().fillna(0)
         elif self.fill_strategy == 'none':
-            pass  # Keep NaN values for lagged features
+            pass
         else:
-            raise ValueError(f"Unsupported fill method: {self.fill_method}")                            
-            
+            raise ValueError(f"Unsupported fill method: {self.fill_strategy}")
+
         return X_out

@@ -1,20 +1,21 @@
 import pandas as pd
 
-class TimeSeriesWrangler:
-    """
-    Handles structural data changes like resampling and gap filling.
 
-    Parameters:
-    - date_col: str
-        The name of the date column in the DataFrame.
-    - fill_col: str
-        The name of the column to fill when resampling.
-    - freq: str, optional (default='D')
-        The frequency to resample the data to (e.g., 'D' for daily, 'H' for hourly).
-    - fill_method: str, optional (default='zero')
-        The method to fill missing values after resampling. Options include:
-        'zero' (fill with zeros), 'ffill' (forward fill), 'bfill' (backward fill).
+class TimeSeriesWrangler:
+    """Handle time series resampling and gap filling for daily sales data.
+
+    Parameters
+    ----------
+    date_col : str
+        The name of the date column in the input DataFrame.
+    fill_col : str
+        The column whose missing values should be filled after resampling.
+    freq : str, default 'D'
+        The frequency used to reindex the time series.
+    fill_method : str, default 'zeros'
+        The strategy used to fill missing values. Supported values are 'zeros', 'ffill', and 'bfill'.
     """
+
     def __init__(self, date_col: str, fill_col: str, freq: str = 'D', fill_method: str = 'zeros'):
         self.date_col = date_col
         self.freq = freq
@@ -22,22 +23,15 @@ class TimeSeriesWrangler:
         self.fill_method = fill_method
 
     def clean(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        The main entry point for cleaning. 
-        Ensures the dataframe is structurally sound.
-        """
+        """Clean the input DataFrame, resample to the target frequency, and fill missing values."""
         df = df.copy()
         df[self.date_col] = pd.to_datetime(df[self.date_col])
-        
-        # 1. Handle Duplicates
         df = df.drop_duplicates(subset=[self.date_col])
-        
-        # 2. Fill Gaps (Resampling)
         df = df.set_index(self.date_col)
-        dates_ts = pd.date_range(start=df.index.min(), end=df.index.max(), freq='D')
-        
-        resampler = df.reindex(dates_ts)
-        
+
+        date_index = pd.date_range(start=df.index.min(), end=df.index.max(), freq=self.freq)
+        resampler = df.reindex(date_index)
+
         if self.fill_method == 'zeros':
             df_clean = resampler[self.fill_col].fillna(0)
         elif self.fill_method == 'ffill':
@@ -46,7 +40,6 @@ class TimeSeriesWrangler:
             df_clean = resampler[self.fill_col].bfill().fillna(0)
         else:
             raise ValueError(f"Unsupported fill method: {self.fill_method}")
-        
-        # 3. Reset index to keep it compatible with downstream tasks
-        df_clean.index.name = 'date'
+
+        df_clean.index.name = self.date_col
         return df_clean.reset_index()
