@@ -471,14 +471,14 @@ if show_holidays:
     holiday_dates = plot_events[plot_events['date_is_holiday'] == 1][date_col]
     for i, hole_date in enumerate(holiday_dates):
         ax.axvspan(hole_date, hole_date + pd.Timedelta(days=1), 
-                   color='red', alpha=0.15, label='Holiday' if i == 0 else "")
+                color='red', alpha=0.15, label='Holiday' if i == 0 else "")
 
 # Highlight Paydays (Light Green Spans)
 if show_paydays:
     payday_dates = plot_events[plot_events['date_is_payday'] == 1][date_col]
     for i, pay_date in enumerate(payday_dates):
         ax.axvspan(pay_date, pay_date + pd.Timedelta(days=1), 
-                   color='green', alpha=0.15, label='Payday' if i == 0 else "")
+                color='green', alpha=0.15, label='Payday' if i == 0 else "")
         
 # Plot Actuals
 sns.lineplot(
@@ -535,5 +535,3 @@ wide_format_df = merged_df.set_index(date_col).T
 
 # Display using Streamlit dataframe with horizontal scrolling enabled
 st.dataframe(wide_format_df, use_container_width=True)
-
-
